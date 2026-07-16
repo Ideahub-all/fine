@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IdeaHub — каталог бизнес-идей</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BwZWSLpq.css">
+</head>
+<body class="bg-match">
+
+  <div class="gradient-orb orb1"></div>
+  <div class="gradient-orb orb2"></div>
+  <div class="gradient-orb orb3"></div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <header class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-left">
+        <a href="#" class="logo-text">Idea<span>Hub</span></a>
+      </div>
+      
+      <nav class="navbar-glass" id="mainNav">
+        <div class="navbar-glass-container">
+          <div class="navbar-tabs" id="navTabs">
+            <div class="nav-indicator" id="navIndicator"></div>
+            <button class="nav-tab active" data-tab="match">
+              <i data-lucide="sliders"></i><span>Подборка</span>
+            </button>
+            <button class="nav-tab" data-tab="ideas">
+              <i data-lucide="lightbulb"></i><span>Идеи</span>
+            </button>
+            <button class="nav-tab" data-tab="articles">
+              <i data-lucide="book-open"></i><span>Статьи</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div class="navbar-right">
+        <div class="navbar-glass-auth" id="authContainer" style="display: flex; gap: 10px; align-items: center; padding-right: 5px;">
+          <button class="btn-glow btn-auth-wide" id="authBtn">Войти / Регистрация</button>
+          <img src="" class="nav-avatar" id="navAvatarBtn" style="display: none;" alt="Профиль">
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    
+    <section id="match-tab" class="tab-content active-tab">
+      <section class="hero-section">
+        <h1 class="hero-title">Умная <span>подборка</span> идей</h1>
+        <p class="hero-subtitle">Укажите параметры — мы найдём бизнес-идеи, которые подходят именно вам.</p>
+
+        <div class="selection-builder">
+          <div class="selection-group">
+            <label class="selection-label">Бюджет</label>
+            <div class="selection-capsule" data-filter="budget">
+              <button class="selection-option active" data-value="0">Любой</button>
+              <button class="selection-option" data-value="10000">до 10к</button>
+              <button class="selection-option" data-value="30000">до 30к</button>
+              <button class="selection-option" data-value="50000">до 50к</button>
+              <button class="selection-option" data-value="100000">до 100к</button>
+              <button class="selection-option" data-value="200000">до 200к</button>
+            </div>
+          </div>
+
+          <div class="selection-group">
+            <label class="selection-label">Сложность</label>
+            <div class="selection-capsule" data-filter="complexity">
+              <button class="selection-option active" data-value="all">Любая</button>
+              <button class="selection-option" data-value="Низкая">Низкая</button>
+              <button class="selection-option" data-value="Средняя">Средняя</button>
+              <button class="selection-option" data-value="Высокая">Высокая</button>
+            </div>
+          </div>
+
+          <div class="selection-group">
+            <label class="selection-label">Риски</label>
+            <div class="selection-capsule" data-filter="risk">
+              <button class="selection-option active" data-value="all">Любые</button>
+              <button class="selection-option" data-value="Низкий">Низкие</button>
+              <button class="selection-option" data-value="Средний">Средние</button>
+              <button class="selection-option" data-value="Высокий">Высокие</button>
+            </div>
+          </div>
+
+          <div class="selection-group">
+            <label class="selection-label">Рейтинг</label>
+            <div class="selection-capsule" data-filter="rating">
+              <button class="selection-option active" data-value="0">Любой</button>
+              <button class="selection-option" data-value="3.5">3.5+</button>
+              <button class="selection-option" data-value="4.0">4.0+</button>
+              <button class="selection-option" data-value="4.5">4.5+</button>
+            </div>
+          </div>
+
+          <div class="selection-group">
+            <label class="selection-label">Минимум апвоутов</label>
+            <div class="selection-capsule" data-filter="upvotes">
+              <button class="selection-option active" data-value="0">0</button>
+              <button class="selection-option" data-value="5">5</button>
+              <button class="selection-option" data-value="10">10</button>
+              <button class="selection-option" data-value="25">25</button>
+              <button class="selection-option" data-value="50">50</button>
+            </div>
+          </div>
+
+          <button class="btn-glow selection-search-btn" id="selectionSearchBtn">
+            <i data-lucide="search"></i>
+            <span>Искать</span>
+          </button>
+        </div>
+
+        <div class="selection-results" id="selectionResults"></div>
+      </section>
+    </section>
+    
+    <section id="ideas-tab" class="tab-content" style="display: none;">
+      <div class="ideas-layout">
+        <aside class="sidebar-glass" id="ideasSidebar">
+          <div class="sidebar-tabs" id="sidebarTabs">
+            <div class="sidebar-indicator" id="sidebarIndicator"></div>
+            <button class="sidebar-tab active" data-side-tab="all" title="Все">
+              <i data-lucide="layers"></i>
+            </button>
+            <button class="sidebar-tab" data-side-tab="top" title="Топ">
+              <i data-lucide="flame"></i>
+            </button>
+          </div>
+        </aside>
+
+        <div class="ideas-main">
+          <section class="hero-section">
+            <h1 class="hero-title">Найди свою идеальную <br><span>бизнес-идею</span></h1>
+            <p class="hero-subtitle">Интеллектуальный каталог перспективных стартапов, трендов и готовых решений для вашего старта.</p>
+            
+            <div class="search-filter-container glass">
+              <div class="search-box">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="ideasSearch" placeholder="Поиск бизнес-идеи, категории..." />
+                <div class="search-spinner"></div>
+                <button class="clear-btn" id="searchClear"><i data-lucide="x"></i></button>
+              </div>
+              <button class="btn-filter" id="filterToggleBtn">
+                <i data-lucide="sliders-horizontal"></i> Фильтры
+              </button>
+            </div>
+
+            <div class="filter-panel glass" id="filterPanel" style="display: none; height: 0; opacity: 0;">
+              <div class="filter-group">
+                <h4>Категории</h4>
+                <div class="filter-pills" id="categoryFilters">
+                  <button class="filter-pill active" data-category="all">Все</button>
+                  <button class="filter-pill" data-category="IT">IT</button>
+                  <button class="filter-pill" data-category="Еда">Еда</button>
+                  <button class="filter-pill" data-category="Услуги">Услуги</button>
+                  <button class="filter-pill" data-category="Онлайн-бизнес">Онлайн-бизнес</button>
+                  <button class="filter-pill" data-category="Производство">Производство</button>
+                  <button class="filter-pill" data-category="Недвижимость">Недвижимость</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="catalog-container">
+            <div class="cards-grid" id="cardsGrid">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="articles-tab" class="tab-content" style="display: none;">
+      <section class="hero-section">
+        <h1 class="hero-title">Полезные <span>Статьи</span></h1>
+        <p class="hero-subtitle">Гайды, аналитика рынка и советы экспертов по запуску и масштабированию бизнеса.</p>
+        <div class="articles-search-bar">
+          <div class="articles-search-input-wrap">
+            <i data-lucide="search" class="search-icon-inner"></i>
+            <input type="text" id="articlesSearchInput" class="articles-search-input" placeholder="Поиск статей..." />
+          </div>
+          <button class="articles-search-btn" id="articlesSearchBtn" aria-label="Искать">
+            <i data-lucide="search"></i>
+          </button>
+        </div>
+      </section>
+      <div class="catalog-container">
+        <div class="cards-grid" id="articlesGrid">
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="detailsModal" class="modal-overlay">
+    <div class="modal-backdrop" id="detailsBackdrop"></div>
+    <div class="modal-window glass">
+      <button class="modal-close" id="detailsCloseBtn">&times;</button>
+      <div id="modalDynamicContent"></div>
+    </div>
+  </div>
+
+  <div id="authModal" class="modal">
+    <div class="modal-content glass">
+      <span class="close-modal" id="closeAuth">&times;</span>
+      <h2 id="modalTitle">Вход в систему</h2>
+      <p id="modalSub" style="color: var(--nav-text); margin-bottom: 1.5rem;">Введите данные для доступа к IdeaHub</p>
+      
+      <form id="authForm" novalidate>
+        <div id="authErrorMsg" class="auth-error-msg"></div>
+        <div class="input-group">
+          <label>Имя пользователя</label>
+          <input type="text" id="authUsername" required placeholder="ivan_ivanov">
+        </div>
+        <div class="input-group">
+          <label>Пароль</label>
+          <input type="password" id="authPassword" required placeholder="••••••••">
+        </div>
+        <div class="input-group" id="nameFieldGroup" style="display: none;">
+          <label>Отображаемое имя (для регистрации)</label>
+          <input type="text" id="authName" placeholder="Иван Иванов">
+        </div>
+        <button type="submit" class="btn-glow btn-submit" id="submitAuthBtn">
+          <span class="btn-submit-text">Войти</span>
+          <span class="btn-submit-spinner"></span>
+        </button>
+      </form>
+      
+      <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--nav-text);">
+        <span id="toggleAuthText">Ещё нет аккаунта?</span> 
+        <a href="#" id="toggleAuthLink" style="color: var(--accent-color); text-decoration: none; margin-left: 5px;">Создать</a>
+      </p>
+    </div>
+  </div>
+
+  <div id="userProfileModal" class="modal-overlay">
+    <div class="modal-backdrop" id="userProfileBackdrop"></div>
+    <div class="modal-window glass user-profile-window">
+       <button class="modal-close glass-close-btn" id="userProfileClose">
+         <i data-lucide="x"></i>
+       </button>
+
+       <div class="profile-scroll-content">
+          <div class="profile-header">
+             <div class="profile-avatar-wrapper">
+                <img id="profileModalAvatar" src="" alt="Avatar">
+                <button id="changeAvatarBtn"><i data-lucide="camera" style="width: 16px; height: 16px;"></i></button>
+                <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
+             </div>
+             <h2 id="profileModalName">Name</h2>
+             <p id="profileModalEmail" style="opacity: 0.6; margin-top: 5px;">email@example.com</p>
+          </div>
+
+          <div class="profile-stats-grid">
+             <div class="stat-card">
+                <i data-lucide="arrow-up"></i>
+                <span id="statUpvotes">0</span>
+                <p>Апвоутов</p>
+             </div>
+             <div class="stat-card">
+                <i data-lucide="message-square"></i>
+                <span id="statComments">0</span>
+                <p>Отзывов</p>
+             </div>
+             <div class="stat-card">
+                <i data-lucide="eye"></i>
+                <span id="statIdeas">0</span>
+                <p>Идей изучено</p>
+             </div>
+             <div class="stat-card">
+                <i data-lucide="book-open"></i>
+                <span id="statArticles">0</span>
+                <p>Статей прочитано</p>
+             </div>
+             <div class="stat-card">
+                <i data-lucide="clock"></i>
+                <span id="statAge">0 дней</span>
+                <p>Возраст аккаунта</p>
+             </div>
+          </div>
+          
+          <div class="profile-bottom-controls">
+             <div class="account-switch-wrapper">
+                 <button class="acc-capsule-btn" id="accSwitchBtn">
+                     <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                     <span>Мои аккаунты</span>
+                     <i data-lucide="chevron-down" id="accSwitchIcon" style="width: 18px; height: 18px; transition: transform 0.3s;"></i>
+                 </button>
+                 <div id="accSwitchMenu" class="acc-dropdown">
+                     <div class="acc-dropdown-list" id="accDropdownList"></div>
+                     <div class="acc-dropdown-actions">
+                         <button class="acc-dropdown-item" id="addAccountBtn">
+                             <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                             <span>Добавить аккаунт</span>
+                         </button>
+                         <button class="acc-dropdown-item logout" id="profileLogoutBtn">
+                             <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                             <span>Выйти</span>
+                         </button>
+                     </div>
+                 </div>
+             </div>
+          </div>
+          
+          <div class="profile-settings-wrapper">
+              <button class="navbar-glass nav-tab capsule-settings-btn" id="openSettingsBtn">
+                  <i data-lucide="settings"></i><span>Настройки</span>
+              </button>
+          </div>
+       </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-backdrop" id="settingsBackdrop"></div>
+    <div class="modal-window glass settings-window">
+       <button class="modal-close" id="settingsCloseBtn">
+         <i data-lucide="x"></i>
+       </button>
+
+       <div class="settings-header">
+          <h2>Настройки</h2>
+       </div>
+
+       <div class="settings-tab-bar-wrapper">
+          <div class="navbar-glass settings-tab-bar">
+             <div class="navbar-glass-container">
+                <div class="navbar-tabs" id="settingsTabs">
+                   <div class="nav-indicator" id="settingsIndicator"></div>
+                   <button class="nav-tab active" data-settings-tab="general">
+                     <i data-lucide="user-cog"></i><span>Основные</span>
+                   </button>
+                   <button class="nav-tab" data-settings-tab="personalization">
+                     <i data-lucide="palette"></i><span>Персонализация</span>
+                   </button>
+                   <button class="nav-tab" data-settings-tab="privacy">
+                     <i data-lucide="shield"></i><span>Конфиденциальность</span>
+                   </button>
+                   <button class="nav-tab" data-settings-tab="interface">
+                     <i data-lucide="layout-grid"></i><span>Интерфейс</span>
+                   </button>
+                </div>
+             </div>
+          </div>
+       </div>
+
+       <div class="settings-body">
+          <div class="settings-panel active" id="settings-general">
+             <div class="settings-section">
+                <h3>Профиль</h3>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Имя</span>
+                      <small>Отображается на аватаре и в комментариях</small>
+                   </div>
+                   <input type="text" id="settingsNameInput" placeholder="Ваше имя" class="settings-input">
+                </div>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Имя пользователя</span>
+                      <small>Используется для входа вместо email</small>
+                   </div>
+                   <input type="text" id="settingsUsernameInput" placeholder="ivan_ivanov" class="settings-input">
+                </div>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Email</span>
+                      <small>Адрес электронной почты</small>
+                   </div>
+                   <input type="email" id="settingsEmailInput" disabled class="settings-input settings-input-disabled">
+                </div>
+             </div>
+             <div class="settings-section">
+                <h3>Уведомления</h3>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Toast-уведомления</span>
+                      <small>Показывать всплывающие уведомления</small>
+                   </div>
+                   <label class="toggle-switch">
+                      <input type="checkbox" id="settingToasts" checked>
+                      <span class="toggle-slider"></span>
+                   </label>
+                </div>
+             </div>
+          </div>
+
+          <div class="settings-panel" id="settings-personalization" style="display:none;">
+             <div class="settings-section">
+                <h3>Темы оформления</h3>
+                <p class="settings-hint">Выберите готовую тему или создайте свою. Изменения применяются мгновенно.</p>
+                <div class="theme-grid" id="themeGrid"></div>
+             </div>
+             <div class="settings-section">
+                <h3>Создать свою тему</h3>
+                <div class="custom-theme-builder" id="customThemeBuilder">
+                   <div class="custom-theme-field">
+                      <label>Цвет фона</label>
+                      <div class="color-picker-row">
+                         <input type="color" id="customBgColor" value="#0b0d10">
+                         <input type="text" id="customBgText" value="#0b0d10" class="settings-input color-text-input">
+                      </div>
+                   </div>
+                   <div class="custom-theme-field">
+                      <label>Акцентный цвет</label>
+                      <div class="color-picker-row">
+                         <input type="color" id="customAccentColor" value="#00ffcc">
+                         <input type="text" id="customAccentText" value="#00ffcc" class="settings-input color-text-input">
+                      </div>
+                   </div>
+                   <div class="custom-theme-field">
+                      <label>Цвет интерфейса (карточки/навбар)</label>
+                      <div class="color-picker-row">
+                         <input type="color" id="customInterfaceColor" value="#14181e">
+                         <input type="text" id="customInterfaceText" value="#14181e" class="settings-input color-text-input">
+                      </div>
+                   </div>
+                   <div class="theme-mode-toggle-wrapper">
+                      <div class="theme-mode-toggle-labels">
+                         <span id="themeModeLabelDark" class="active"><i data-lucide="moon"></i> Тёмная</span>
+                         <span id="themeModeLabelLight"><i data-lucide="sun"></i> Светлая</span>
+                      </div>
+                      <div class="theme-mode-toggle">
+                         <div class="theme-mode-toggle-tabs">
+                            <div class="theme-mode-indicator" id="themeModeIndicator"></div>
+                            <button class="theme-mode-tab active" data-theme-mode="dark">
+                              <i data-lucide="moon"></i><span>Тёмлая</span>
+                            </button>
+                            <button class="theme-mode-tab" data-theme-mode="light">
+                              <i data-lucide="sun"></i><span>Светлая</span>
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                   <div class="custom-theme-field">
+                      <label>Название темы</label>
+                      <input type="text" id="customThemeName" placeholder="Моя тема" class="settings-input">
+                   </div>
+                   <button class="btn-glow" id="saveCustomThemeBtn" style="margin-top:0.5rem;">Сохранить тему</button>
+                </div>
+             </div>
+          </div>
+
+          <div class="settings-panel" id="settings-privacy" style="display:none;">
+             <div class="settings-section">
+                <h3>Видимость</h3>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Публичный профиль</span>
+                      <small>Другие пользователи видят вашу статистику</small>
+                   </div>
+                   <label class="toggle-switch">
+                      <input type="checkbox" id="settingPublicProfile" checked>
+                      <span class="toggle-slider"></span>
+                   </label>
+                </div>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Показывать комментарии</span>
+                      <small>Ваши отзывы видны всем</small>
+                   </div>
+                   <label class="toggle-switch">
+                      <input type="checkbox" id="settingShowComments" checked>
+                      <span class="toggle-slider"></span>
+                   </label>
+                </div>
+             </div>
+             <div class="settings-section">
+                <h3>Данные</h3>
+                <div class="settings-row">
+                   <div class="settings-row-info">
+                      <span>Очистить кэш</span>
+                      <small>Удалить локальные данные просмотров и фильтров</small>
+                   </div>
+                   <button class="btn-danger-outline" id="clearCacheBtn">Очистить</button>
+                </div>
+             </div>
+          </div>
+
+          <div class="settings-panel" id="settings-interface" style="display:none;">
+             <div class="settings-section">
+                <h3>Макет интерфейса</h3>
+                <p class="settings-hint">Скоро здесь появится возможность настраивать расположение панелей и вкладок. Перетаскивайте элементы, меняйте их местами и создавайте свой рабочий процесс.</p>
+                <div class="interface-preview-placeholder">
+                   <i data-lucide="layout-grid" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 1rem;"></i>
+                   <p style="opacity: 0.5; font-size: 0.9rem;">Настройка интерфейса будет доступна в следующих обновлениях</p>
+                </div>
+             </div>
+          </div>
+       </div>
+    </div>
+  </div>
+
+  <div id="cropModal" class="modal-overlay">
+     <div class="modal-backdrop"></div>
+     <div class="modal-window glass small-modal" style="touch-action: none;">
+         <h3 style="text-align: center; margin-bottom: 1rem;">Обрезка фото</h3>
+         <div class="crop-container" style="display: flex; justify-content: center; margin-bottom: 1rem; position: relative; overflow: hidden;">
+            <canvas id="cropCanvas" style="max-width: 100%; border-radius: 50%; border: 2px dashed var(--accent-color); cursor: grab;"></canvas>
+         </div>
+         <label style="font-size: 0.85rem; opacity: 0.7; display: block; text-align: center;">Приближение</label>
+         <input type="range" id="cropZoom" min="0.5" max="3" step="0.05" value="1" style="width: 100%; margin-bottom: 1.5rem;">
+         <div style="display: flex; gap: 1rem;">
+            <button id="cancelCropBtn" class="btn-ghost" style="flex: 1; padding: 0.8rem; border-radius: 100px; border: 1px solid var(--card-border); background: transparent; color: white; cursor: pointer;">Отмена</button>
+            <button id="applyCropBtn" class="btn-glow" style="flex: 1; padding: 0.8rem;">Применить</button>
+         </div>
+     </div>
+  </div>
+
+  <button class="saved-panel-trigger" id="savedPanelTrigger" title="Избранное и апвоуты">
+    <i data-lucide="bookmark"></i>
+    <span>Мои идеи</span>
+  </button>
+
+  <div id="savedPanelOverlay" class="saved-panel-overlay">
+    <div class="saved-panel-backdrop" id="savedPanelBackdrop"></div>
+    <div class="saved-panel">
+      <div class="saved-panel-header">
+        <h3>Мои идеи</h3>
+        <button class="saved-panel-close" id="savedPanelClose"><i data-lucide="x"></i></button>
+      </div>
+      <div class="saved-panel-nav-wrapper">
+        <div class="saved-panel-nav">
+          <div class="saved-panel-tabs" id="savedPanelTabs">
+            <div class="saved-panel-indicator" id="savedPanelIndicator"></div>
+            <button class="saved-panel-tab active" data-saved-tab="favorites"><i data-lucide="bookmark"></i><span>Избранное</span></button>
+            <button class="saved-panel-tab" data-saved-tab="upvotes"><i data-lucide="arrow-up"></i><span>Апвоуты</span></button>
+            <button class="saved-panel-tab" data-saved-tab="articles"><i data-lucide="file-text"></i><span>Статьи</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="saved-panel-content" id="savedPanelContent"></div>
+    </div>
+  </div>
+
+  <script src="/src/scripts/script.js" defer></script>
+</body>
+</html>
