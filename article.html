@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Чтение статьи — IdeaHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-articles">
+
+  <div class="gradient-orb orb1"></div><div class="gradient-orb orb2"></div><div class="gradient-orb orb3"></div>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <header class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-left">
+        <button class="nav-avatar" onclick="window.location.href='index.html'" style="display: flex; align-items: center; justify-content: center; background: var(--nav-bg); border: 1px solid var(--nav-border);">
+           <i data-lucide="arrow-left" style="color: var(--text-color);"></i>
+        </button>
+      </div>
+      
+      <nav class="navbar-glass">
+        <div class="navbar-glass-container" style="padding: 0 1rem; color: var(--text-color); font-weight: 600;" id="articleNavTitle">
+          Загрузка...
+        </div>
+      </nav>
+
+      <div class="navbar-right" style="gap: 10px;">
+         <button class="btn-glow" style="padding: 0.5rem 1rem;" id="articleUpvoteBtn"><i data-lucide="arrow-up"></i></button>
+         <button class="btn-glow" style="padding: 0.5rem 1rem;" id="articleFavBtn"><i data-lucide="bookmark"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content" style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+     <div class="glass-card" style="margin-top: 2rem;" id="articleContentContainer">
+     </div>
+     
+     <div class="glass-card" style="margin-top: 2rem;">
+        <div id="commentsSection"></div>
+     </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const articleId = parseInt(urlParams.get('id'), 10);
+        
+        if (!articleId) {
+            document.getElementById('articleContentContainer').innerHTML = "<p>Статья не найдена.</p>";
+            return;
+        }
+
+        const res = await fetch('articles.json');
+        const articles = await res.json();
+        const article = articles.find(a => a.id === articleId);
+
+        if(article) {
+            document.getElementById('articleNavTitle').textContent = article.title;
+            document.getElementById('articleContentContainer').innerHTML = `
+                <span class="card-badge">${article.category}</span>
+                <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">${article.title}</h1>
+                <p style="opacity: 0.6; margin-bottom: 2rem;">${article.author} · ${article.readTime} мин чтения</p>
+                <div style="line-height: 1.8; font-size: 1.05rem; opacity: 0.9;">
+                    ${article.content}
+                </div>
+            `;
+            
+            document.getElementById('articleUpvoteBtn').addEventListener('click', async () => {
+                const today = new Date().toDateString();
+                const lastUpvote = localStorage.getItem(`upvote_date_article_${article.id}`);
+                
+                if(lastUpvote === today) {
+                    showNotification('Вы уже отдавали голос за эту статью сегодня.', 'error');
+                } else {
+                    localStorage.setItem(`upvote_date_article_${article.id}`, today);
+                    showNotification('Апвоут поставлен!');
+                }
+            });
+            
+            document.getElementById('articleFavBtn').addEventListener('click', async () => {
+                showNotification('Статья добавлена в избранное!');
+            });
+
+            if(typeof loadCommentsUI === 'function') {
+                loadCommentsUI('art_' + article.id); 
+            }
+        }
+        
+        if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
