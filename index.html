@@ -170,13 +170,27 @@
         </div>
         <div class="input-group">
           <label>Пароль</label>
-          <input type="password" id="authPassword" required placeholder="••••••••">
+          <input 
+      type="password" 
+      id="loginPassword" 
+      placeholder="Пароль" 
+      class="input-field" 
+      style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: var(--text-color);"
+      required
+    >
         </div>
         <div class="input-group" id="nameFieldGroup" style="display: none;">
           <label>Ваше имя (для регистрации)</label>
-          <input type="text" id="authName" placeholder="Иван Иванов">
+          <input 
+      type="text" 
+      id="loginIdentifier" 
+      placeholder="Email или Имя пользователя" 
+      class="input-field" 
+      style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: var(--text-color);"
+      required
+    >
         </div>
-        <button type="submit" class="btn-glow btn-submit" id="submitAuthBtn">Войти</button>
+        button id="loginSubmitBtn" class="btn-glow" style="width: 100%; padding: 0.8rem;">
       </form>
       
       <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--nav-text);">
