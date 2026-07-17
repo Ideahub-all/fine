@@ -1233,3 +1233,71 @@ function updateFabContent(type) {
     fabContentList.innerHTML = contentHtml;
     if (window.lucide) lucide.createIcons();
 }
+
+
+// Находим кнопку отправки формы входа (убедитесь, что ID совпадает с вашей кнопкой)
+const loginBtn = document.getElementById('loginSubmitBtn');
+
+if (loginBtn) {
+    loginBtn.addEventListener('click', async () => {
+        // Получаем значение из нашего универсального поля
+        const identifier = document.getElementById('loginIdentifier').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        // Проверка на заполненность
+        if (!identifier || !password) {
+            showNotification('Пожалуйста, заполните все поля', 'error');
+            return;
+        }
+
+        let emailForLogin = identifier;
+        
+        // Проверяем, является ли введенный текст email-адресом (ищем знак @)
+        const isEmail = identifier.includes('@');
+
+        // Если это НЕ email, значит пользователь ввел username
+        if (!isEmail) {
+            showNotification('Ищем пользователя по имени...', 'info');
+
+            // Запрос в вашу таблицу 'profiles' для поиска email по username
+            const { data: profileData, error: profileError } = await supabaseClient
+                .from('profiles') 
+                .select('email')
+                .eq('username', identifier)
+                .single();
+
+            // Если не нашли или произошла ошибка
+            if (profileError || !profileData) {
+                showNotification('Пользователь с таким именем не найден', 'error');
+                console.error("Profile search error:", profileError);
+                return;
+            }
+            
+            // Если нашли, подставляем его email для авторизации в Supabase
+            emailForLogin = profileData.email; 
+        }
+
+        // Выполняем стандартный вход в Supabase Auth по email и паролю
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: emailForLogin,
+            password: password,
+        });
+
+        if (error) {
+            showNotification('Ошибка входа: Неверный логин или пароль', 'error');
+            console.error("Auth error:", error.message);
+        } else {
+            showNotification('Успешный вход!', 'success');
+            
+            // Очищаем поля формы после успешного входа
+            document.getElementById('loginIdentifier').value = '';
+            document.getElementById('loginPassword').value = '';
+            
+            // Здесь добавьте код закрытия вашей модалки, например:
+            // document.getElementById('authModal').classList.remove('active');
+            
+            // Если у вас есть функция обновления интерфейса (скрыть кнопки войти/рег), вызовите её:
+            if (typeof updateUI === 'function') updateUI();
+        }
+    });
+}
