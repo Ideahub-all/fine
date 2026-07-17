@@ -157,47 +157,32 @@
   </div>
 
   <div id="authModal" class="modal">
-    <div class="modal-content glass">
-      <span class="close-modal" id="closeAuth">&times;</span>
-      <h2 id="modalTitle">Вход в систему</h2>
-      <p id="modalSub" style="color: var(--nav-text); margin-bottom: 1.5rem;">Введите данные для доступа к IdeaHub</p>
-      
-      <form id="authForm" novalidate>
-        <div id="authErrorMsg" class="auth-error-msg"></div>
-        <div class="input-group">
-          <label>Email</label>
-          <input type="email" id="authEmail" required placeholder="example@mail.com">
-        </div>
-        <div class="input-group">
-          <label>Пароль</label>
-          <input 
-      type="password" 
-      id="loginPassword" 
-      placeholder="Пароль" 
-      class="input-field" 
-      style="width: 100%; margin-bottom: 1.5rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: var(--text-color);"
-      required
-    >
-        </div>
-        <div class="input-group" id="nameFieldGroup" style="display: none;">
-          <label>Ваше имя (для регистрации)</label>
-          <input 
-      type="text" 
-      id="loginIdentifier" 
-      placeholder="Email или Имя пользователя" 
-      class="input-field" 
-      style="width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: var(--text-color);"
-      required
-    >
-        </div>
-        button id="loginSubmitBtn" class="btn-glow" style="width: 100%; padding: 0.8rem;">
-      </form>
-      
-      <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--nav-text);">
-        <span id="toggleAuthText">Ещё нет аккаунта?</span> 
-        <a href="#" id="toggleAuthLink" style="color: var(--accent-color); text-decoration: none; margin-left: 5px;">Создать</a>
-      </p>
-    </div>
+     <div class="modal-content glass">
+         <button class="modal-close" id="closeAuthBtn">
+             <i data-lucide="x"></i>
+         </button>
+         <h2 id="modalTitle" style="margin-bottom: 2rem; font-size: 1.8rem; font-weight: 600; text-align: center;">Вход</h2>
+         
+         <div class="auth-form">
+             <div class="input-wrapper" style="margin-bottom: 1.2rem;">
+                 <input type="text" id="loginIdentifier" placeholder="Email или Имя пользователя" class="input-field" style="width: 100%; padding-right: 15px;" required>
+             </div>
+             
+             <div class="input-wrapper" style="margin-bottom: 1.5rem; position: relative; display: flex; align-items: center;">
+                 <input type="password" id="loginPassword" placeholder="Пароль" class="input-field" style="width: 100%; padding-right: 45px;" required>
+                 <button type="button" id="togglePasswordBtn" style="position: absolute; right: 15px; background: none; border: none; color: var(--text-color); opacity: 0.6; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: opacity 0.2s;">
+                     <i data-lucide="eye" id="togglePasswordIcon" style="width: 20px; height: 20px;"></i>
+                 </button>
+             </div>
+             
+             <button id="loginSubmitBtn" class="btn-glow" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem;">Войти</button>
+             
+             <p style="text-align: center; opacity: 0.7; font-size: 0.95rem;">
+                 <span id="switchAuthText">Нет аккаунта?</span> 
+                 <a href="#" id="switchAuthLink" style="color: var(--accent-color); text-decoration: none; font-weight: 600; margin-left: 5px;">Зарегистрироваться</a>
+             </p>
+         </div>
+     </div>
   </div>
 
   <div id="userProfileModal" class="modal-overlay">
