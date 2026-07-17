@@ -1301,3 +1301,99 @@ if (loginBtn) {
         }
     });
 }
+
+// Настройка переключения видимости пароля (Глазик)
+const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+const loginPasswordInput = document.getElementById('loginPassword');
+const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+if (togglePasswordBtn && loginPasswordInput) {
+    togglePasswordBtn.addEventListener('click', () => {
+        // Проверяем текущий тип инпута
+        const isPassword = loginPasswordInput.getAttribute('type') === 'password';
+        
+        // Меняем тип инпута: если был password -> ставим text, и наоборот
+        loginPasswordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        
+        // Меняем иконку и прозрачность для визуального отклика
+        if (isPassword) {
+            togglePasswordIcon.setAttribute('data-lucide', 'eye-off');
+            togglePasswordBtn.style.opacity = '1';
+        } else {
+            togglePasswordIcon.setAttribute('data-lucide', 'eye');
+            togglePasswordBtn.style.opacity = '0.6';
+        }
+        
+        // Перерисовываем иконки Lucide, чтобы изменения применились
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+}
+
+// Умный логин: Автоматическое определение Email / Username
+const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+if (loginSubmitBtn) {
+    loginSubmitBtn.addEventListener('click', async () => {
+        const identifier = document.getElementById('loginIdentifier').value.trim();
+        const password = loginPasswordInput.value;
+
+        if (!identifier || !password) {
+            showNotification('Пожалуйста, заполните все поля', 'error');
+            return;
+        }
+
+        let emailForLogin = identifier;
+        // Если в строке нет символа @, значит пользователь вводит Имя пользователя
+        const isEmail = identifier.includes('@');
+
+        if (!isEmail) {
+            showNotification('Проверяем имя пользователя...', 'info');
+
+            // Ищем привязанный email в таблице profiles по колонке username
+            const { data: profileData, error: profileError } = await supabaseClient
+                .from('profiles')
+                .select('email')
+                .eq('username', identifier)
+                .single();
+
+            if (profileError || !profileData) {
+                showNotification('Пользователь с таким именем не найден', 'error');
+                console.error("Поиск профиля не удался:", profileError);
+                return;
+            }
+
+            // Нашли email пользователя, присваиваем переменной для входа
+            emailForLogin = profileData.email;
+        }
+
+        // Входим в Supabase, используя полученный email
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: emailForLogin,
+            password: password,
+        });
+
+        if (error) {
+            showNotification('Неверный логин или пароль', 'error');
+            console.error("Ошибка Supabase Auth:", error.message);
+        } else {
+            showNotification('Успешный вход!', 'success');
+            
+            // Очищаем форму и сбрасываем состояние глазика
+            document.getElementById('loginIdentifier').value = '';
+            loginPasswordInput.value = '';
+            loginPasswordInput.setAttribute('type', 'password');
+            togglePasswordIcon.setAttribute('data-lucide', 'eye');
+            togglePasswordBtn.style.opacity = '0.6';
+            
+            // Закрываем модальное окно
+            const authModal = document.getElementById('authModal');
+            if (authModal) authModal.classList.remove('active');
+            
+            // Вызываем обновление UI (кнопки профиля / выхода), если функция существует
+            if (typeof updateUI === 'function') updateUI();
+            if (window.lucide) window.lucide.createIcons();
+        }
+    });
+}
+
