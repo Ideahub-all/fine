@@ -374,15 +374,18 @@ function setAuthMode(registerMode) {
 }
 
 function updateAuthButton() {
+  const mobileAvatar = document.getElementById('mobileProfileAvatar');
   if (currentUser) {
     authBtn.style.display = 'none';
     navAvatarBtn.style.display = 'block';
     const name = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'User';
     const avatarUrl = currentUser.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00ffcc&color=0b0d10&bold=true`;
     navAvatarBtn.src = avatarUrl;
+    if (mobileAvatar) mobileAvatar.src = avatarUrl;
   } else {
     authBtn.style.display = 'block';
     navAvatarBtn.style.display = 'none';
+    if (mobileAvatar) mobileAvatar.src = 'https://ui-avatars.com/api/?name=User&background=00ffcc&color=0b0d10&bold=true';
   }
 }
 
@@ -1119,7 +1122,7 @@ function renderArticleCard(article) {
         <span class="meta-item"><i data-lucide="user"></i> ${article.author}</span>
         <span class="meta-item"><i data-lucide="clock"></i> ${article.readTime} мин</span>
       </div>
-      <button class="btn-read" onclick="window.location.href='article.html?id=${article.id}'; event.stopPropagation();">Читать статью</button>
+      <button class="btn-read" onclick="window.location.href='articles/article-${article.id}.html'; event.stopPropagation();">Читать статью</button>
     </div>`;
 }
 
@@ -1235,165 +1238,4 @@ function updateFabContent(type) {
 }
 
 
-// Находим кнопку отправки формы входа (убедитесь, что ID совпадает с вашей кнопкой)
-const loginBtn = document.getElementById('loginSubmitBtn');
-
-if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
-        // Получаем значение из нашего универсального поля
-        const identifier = document.getElementById('loginIdentifier').value.trim();
-        const password = document.getElementById('loginPassword').value;
-
-        // Проверка на заполненность
-        if (!identifier || !password) {
-            showNotification('Пожалуйста, заполните все поля', 'error');
-            return;
-        }
-
-        let emailForLogin = identifier;
-        
-        // Проверяем, является ли введенный текст email-адресом (ищем знак @)
-        const isEmail = identifier.includes('@');
-
-        // Если это НЕ email, значит пользователь ввел username
-        if (!isEmail) {
-            showNotification('Ищем пользователя по имени...', 'info');
-
-            // Запрос в вашу таблицу 'profiles' для поиска email по username
-            const { data: profileData, error: profileError } = await supabaseClient
-                .from('profiles') 
-                .select('email')
-                .eq('username', identifier)
-                .single();
-
-            // Если не нашли или произошла ошибка
-            if (profileError || !profileData) {
-                showNotification('Пользователь с таким именем не найден', 'error');
-                console.error("Profile search error:", profileError);
-                return;
-            }
-            
-            // Если нашли, подставляем его email для авторизации в Supabase
-            emailForLogin = profileData.email; 
-        }
-
-        // Выполняем стандартный вход в Supabase Auth по email и паролю
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: emailForLogin,
-            password: password,
-        });
-
-        if (error) {
-            showNotification('Ошибка входа: Неверный логин или пароль', 'error');
-            console.error("Auth error:", error.message);
-        } else {
-            showNotification('Успешный вход!', 'success');
-            
-            // Очищаем поля формы после успешного входа
-            document.getElementById('loginIdentifier').value = '';
-            document.getElementById('loginPassword').value = '';
-            
-            // Здесь добавьте код закрытия вашей модалки, например:
-            // document.getElementById('authModal').classList.remove('active');
-            
-            // Если у вас есть функция обновления интерфейса (скрыть кнопки войти/рег), вызовите её:
-            if (typeof updateUI === 'function') updateUI();
-        }
-    });
-}
-
-// Настройка переключения видимости пароля (Глазик)
-const togglePasswordBtn = document.getElementById('togglePasswordBtn');
-const loginPasswordInput = document.getElementById('loginPassword');
-const togglePasswordIcon = document.getElementById('togglePasswordIcon');
-
-if (togglePasswordBtn && loginPasswordInput) {
-    togglePasswordBtn.addEventListener('click', () => {
-        // Проверяем текущий тип инпута
-        const isPassword = loginPasswordInput.getAttribute('type') === 'password';
-        
-        // Меняем тип инпута: если был password -> ставим text, и наоборот
-        loginPasswordInput.setAttribute('type', isPassword ? 'text' : 'password');
-        
-        // Меняем иконку и прозрачность для визуального отклика
-        if (isPassword) {
-            togglePasswordIcon.setAttribute('data-lucide', 'eye-off');
-            togglePasswordBtn.style.opacity = '1';
-        } else {
-            togglePasswordIcon.setAttribute('data-lucide', 'eye');
-            togglePasswordBtn.style.opacity = '0.6';
-        }
-        
-        // Перерисовываем иконки Lucide, чтобы изменения применились
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
-    });
-}
-
-// Умный логин: Автоматическое определение Email / Username
-const loginSubmitBtn = document.getElementById('loginSubmitBtn');
-if (loginSubmitBtn) {
-    loginSubmitBtn.addEventListener('click', async () => {
-        const identifier = document.getElementById('loginIdentifier').value.trim();
-        const password = loginPasswordInput.value;
-
-        if (!identifier || !password) {
-            showNotification('Пожалуйста, заполните все поля', 'error');
-            return;
-        }
-
-        let emailForLogin = identifier;
-        // Если в строке нет символа @, значит пользователь вводит Имя пользователя
-        const isEmail = identifier.includes('@');
-
-        if (!isEmail) {
-            showNotification('Проверяем имя пользователя...', 'info');
-
-            // Ищем привязанный email в таблице profiles по колонке username
-            const { data: profileData, error: profileError } = await supabaseClient
-                .from('profiles')
-                .select('email')
-                .eq('username', identifier)
-                .single();
-
-            if (profileError || !profileData) {
-                showNotification('Пользователь с таким именем не найден', 'error');
-                console.error("Поиск профиля не удался:", profileError);
-                return;
-            }
-
-            // Нашли email пользователя, присваиваем переменной для входа
-            emailForLogin = profileData.email;
-        }
-
-        // Входим в Supabase, используя полученный email
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: emailForLogin,
-            password: password,
-        });
-
-        if (error) {
-            showNotification('Неверный логин или пароль', 'error');
-            console.error("Ошибка Supabase Auth:", error.message);
-        } else {
-            showNotification('Успешный вход!', 'success');
-            
-            // Очищаем форму и сбрасываем состояние глазика
-            document.getElementById('loginIdentifier').value = '';
-            loginPasswordInput.value = '';
-            loginPasswordInput.setAttribute('type', 'password');
-            togglePasswordIcon.setAttribute('data-lucide', 'eye');
-            togglePasswordBtn.style.opacity = '0.6';
-            
-            // Закрываем модальное окно
-            const authModal = document.getElementById('authModal');
-            if (authModal) authModal.classList.remove('active');
-            
-            // Вызываем обновление UI (кнопки профиля / выхода), если функция существует
-            if (typeof updateUI === 'function') updateUI();
-            if (window.lucide) window.lucide.createIcons();
-        }
-    });
-}
-
+document.getElementById('mobileProfileBtn')?.addEventListener('click', () => { currentUser ? userProfileModal.classList.add('active') : openAuthModal(); });

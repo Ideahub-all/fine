@@ -2015,3 +2015,371 @@ body.bg-articles .orb3 { bottom: -60px; left: 50%; }
   color: var(--bg-color);
   border-color: var(--accent-color);
 }
+
+
+
+/* Телефоны =========
+
+/* Телефоны =========
+
+/* Телефоны =========
+/* ==========================================================================
+   СТИЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ (MEDIA QUERIES)
+   ========================================================================== */
+
+/* Вспомогательный класс для верхней мобильной панели */
+.mobile-top-bar {
+  display: none; /* Скрыта на ПК */
+}
+
+@media (max-width: 768px) {
+  /* Показываем стильную верхнюю панель на мобилках */
+  .mobile-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    padding: 0 1.5rem;
+    z-index: 101;
+    background: linear-gradient(to bottom, rgba(11, 13, 16, 0.95) 0%, rgba(11, 13, 16, 0.7) 70%, transparent 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .hamburger-btn {
+    background: var(--nav-bg);
+    border: 1px solid var(--nav-border);
+    color: var(--text-color);
+    border-radius: 12px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  
+  .hamburger-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+  }
+
+  /* Переносим навбар вниз экрана */
+  .navbar {
+    top: auto !important;
+    bottom: 0 !important;
+    height: 85px !important;
+    background: transparent !important;
+    padding-bottom: env(safe-area-inset-bottom); /* Поддержка челок iPhone */
+  }
+
+  /* Отключаем верхний градиент десктопного навбара */
+  .navbar::before {
+    display: none !important;
+  }
+
+  .navbar-container {
+    justify-content: center !important;
+    padding: 0 1rem !important;
+  }
+
+  /* Прячем логотип и десктопный профиль из нижнего навбара */
+  .navbar-left, .navbar-right {
+    display: none !important;
+  }
+
+  /* Оформление нижнего навбара: левый/правый верхние углы закруглены, нижние — ровные */
+  .navbar-glass {
+    width: 100% !important;
+    max-width: 480px;
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    padding: 8px 12px 14px 12px !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  /* Компенсируем отступ контента сверху и снизу */
+  .main-content {
+    padding-top: 90px !important;
+    padding-bottom: 110px !important;
+  }
+}
+
+/* ==========================================================================
+   ИСПРАВЛЕНИЯ КНОПКИ ИЗБРАННОГО (FAB) И ОКНА
+   ========================================================================== */
+
+/* Делаем кнопку скромнее по размерам и границам (без кричащего неона) */
+.fab-btn {
+  width: 50px !important;
+  height: 50px !important;
+  background: var(--nav-bg) !important;
+  border: 1px solid var(--nav-border) !important;
+  color: var(--text-color) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.fab-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Настраиваем всплывающее окно, чтобы оно не уезжало за границы дисплея */
+.fab-popup {
+  position: absolute;
+  bottom: 60px !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 310px !important;
+  max-width: calc(100vw - 3rem) !important;
+  border-radius: 1.5rem !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Защита от переполнения внутренней панели в FAB */
+.fab-content-list {
+  max-height: 240px !important;
+  overflow-y: auto !important;
+  padding-right: 4px;
+}
+
+/* Оптимизация производительности: убираем тяжелые hover эффекты на мобильных */
+@media (max-width: 768px) {
+  * {
+    /* Ограничиваем время базовых переходов для плавной инерции */
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Отключаем бесконечный анимированный блик на карточках для экономии батареи */
+  .glass-card::after, .btn-glow::after {
+    animation: none !important;
+    display: none !important;
+  }
+  
+  /* Оставляем легкий статичный блик при тапе */
+  .btn-glow:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+
+
+/* ==========================================================================
+   АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНОВ (единый, без дублей блок)
+   ========================================================================== */
+
+.mobile-top-bar { display: none; }
+
+@media (max-width: 768px) {
+
+  /* --- Верхняя капсула (лого + профиль) --- */
+  .mobile-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: clamp(10px, 2dvh, 20px);
+    left: clamp(10px, 3dvw, 20px);
+    right: clamp(10px, 3dvw, 20px);
+    height: 60px;
+    padding: 0 1.2rem;
+    z-index: 101;
+    background: var(--nav-bg);
+    border: 1px solid var(--nav-border);
+    border-radius: 100px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .hamburger-btn {
+    background: var(--nav-bg);
+    border: 1px solid var(--nav-border);
+    color: var(--text-color);
+    border-radius: 50%;
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Скрываем оригинальный десктопный навбар/шапку каталога, показываем только капсулу */
+  .navbar:not(.article-header) .navbar-left,
+  .navbar:not(.article-header) .navbar-right {
+    display: none !important;
+  }
+
+  /* --- Центральный навбар вкладок (капсула снизу экрана) --- */
+  .navbar:not(.article-header) {
+    top: auto !important;
+    bottom: clamp(10px, 3dvh, 25px) !important;
+    height: auto !important;
+    background: transparent !important;
+    pointer-events: none;
+  }
+  .navbar:not(.article-header)::before { display: none !important; }
+  .navbar:not(.article-header) .navbar-container {
+    justify-content: center !important;
+    padding: 0 clamp(10px, 3dvw, 20px) !important;
+  }
+
+  .navbar:not(.article-header) .navbar-glass {
+    pointer-events: auto;
+    width: 100% !important;
+    max-width: 420px;
+    border-radius: 100px !important;
+    border: 1px solid var(--nav-border) !important;
+    padding: 6px 8px !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .navbar:not(.article-header) .nav-tab {
+    padding: clamp(0.5rem, 1.5dvh, 0.8rem) clamp(0.6rem, 2.5dvw, 1.3rem) !important;
+    font-size: 0.95rem;
+  }
+  .navbar:not(.article-header) .nav-tab span { font-size: 0.8rem; }
+
+  /* --- Шапка страницы статьи: остаётся сверху как обычная мобильная панель --- */
+  .article-header {
+    height: 70px !important;
+    background: linear-gradient(to bottom, rgba(11, 13, 16, 0.95) 0%, transparent 100%) !important;
+  }
+  .article-header::before { display: none !important; }
+  .article-header .navbar-container { padding: 0 1rem !important; }
+  .article-header .navbar-left,
+  .article-header .navbar-right { display: flex !important; flex: 0 0 auto; }
+  .article-header .navbar-glass {
+    flex: 1;
+    margin: 0 0.6rem;
+    overflow: hidden;
+  }
+  .article-header #articleNavTitle {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+  }
+  .article-header .btn-glow span,
+  .article-header .btn-glow { padding: 0.5rem 0.7rem !important; }
+
+  .main-content { padding-top: 90px !important; padding-bottom: 120px !important; }
+  .article-header ~ .main-content { padding-bottom: 2rem !important; }
+
+  /* --- Каталог: карточки в один столбец, компактнее отступы --- */
+  .catalog-container { margin: 1.5rem auto; padding: 0 1rem; }
+  .cards-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .glass-card { padding: 1.4rem; min-height: auto; }
+  .glass-card:hover { transform: translateY(-2px) !important; }
+  .glass-card { transition: transform 0.2s, border-color 0.2s !important; }
+
+  /* --- Заголовки и поиск --- */
+  .hero-section { margin: 1.5rem auto 1.5rem auto; padding: 0 1rem; }
+  .hero-title { font-size: 2rem; }
+  .hero-subtitle { font-size: 1rem; margin-bottom: 1.5rem; }
+
+  .search-filter-container {
+    flex-direction: column;
+    border-radius: 1.5rem;
+    padding: 10px;
+    gap: 0.6rem;
+  }
+  .search-box { padding-left: 1rem; }
+  .btn-filter { justify-content: center; width: 100%; }
+
+  .articles-search-wrapper { flex-direction: column; }
+
+  .filter-panel { padding: 1rem; }
+
+  /* --- Модальные окна --- */
+  .modal-window {
+    width: 92% !important;
+    padding: 1.5rem !important;
+    max-height: 88vh !important;
+  }
+  .modal-grid-info { grid-template-columns: 1fr; }
+
+  /* --- Тосты во всю ширину сверху над нижней капсулой --- */
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    top: 80px;
+  }
+  .toast { min-width: 0; width: 100%; }
+
+  /* --- FAB "избранное" --- */
+  .fab-container {
+    bottom: clamp(85px, 12dvh, 110px) !important;
+    left: auto !important;
+    right: clamp(10px, 3dvw, 20px) !important;
+    z-index: 102;
+  }
+  .fab-btn { width: 50px !important; height: 50px !important; box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important; }
+
+  .fab-popup {
+    position: fixed !important;
+    bottom: clamp(150px, 18dvh, 180px) !important;
+    right: clamp(10px, 3dvw, 20px) !important;
+    left: clamp(10px, 3dvw, 20px) !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 1rem !important;
+    border-radius: 1.5rem !important;
+  }
+  #fabTabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    justify-content: flex-start;
+  }
+  #fabTabs::-webkit-scrollbar { display: none; }
+  #fabTabs .nav-tab { font-size: 0.85rem !important; padding: 0.5rem 1rem !important; white-space: nowrap; }
+
+  /* --- Боковой переключатель "Идей" (горизонтальная капсула) --- */
+  .ideas-layout { flex-direction: column !important; }
+  .sidebar-glass {
+    position: relative !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 300px;
+    margin: 0 auto 1.5rem auto !important;
+    border-radius: 100px !important;
+    padding: 6px !important;
+  }
+  .sidebar-tabs { flex-direction: row !important; width: 100%; justify-content: center; }
+  .sidebar-tab {
+    writing-mode: horizontal-tb !important;
+    flex-direction: row !important;
+    min-height: auto !important;
+    flex: 1;
+    padding: 0.6rem !important;
+  }
+  .sidebar-tab span { writing-mode: horizontal-tb !important; letter-spacing: normal !important; }
+  .sidebar-indicator {
+    height: calc(100% - 4px) !important;
+    width: 50% !important;
+    top: 2px !important;
+    left: 2px !important;
+    transition: transform 0.3s ease, width 0.3s ease !important;
+  }
+  .sidebar-indicator::after { display: none !important; }
+}
+
+/* ==========================================================================
+   УЗКИЕ ТЕЛЕФОНЫ (до 380px) — точечная докрутка
+   ========================================================================== */
+@media (max-width: 380px) {
+  .hero-title { font-size: 1.6rem; }
+  .glass-card { padding: 1.1rem; }
+  .navbar:not(.article-header) .nav-tab span { display: none; }
+  .navbar:not(.article-header) .nav-tab { padding: 0.65rem !important; }
+  .navbar:not(.article-header) .nav-tab i { width: 18px; height: 18px; }
+  .modal-window { padding: 1.1rem !important; }
+}
