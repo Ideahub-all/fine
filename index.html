@@ -17,7 +17,7 @@
 
   <div class="mobile-top-bar">
      <a href="#" class="logo-text" style="font-size: 1.3rem;">Idea<span>Hub</span></a>
-     <button class="hamburger-btn" id="mobileProfileBtn" style="padding: 0; overflow: hidden; border-radius: 50%;">
+     <button class="hamburger-btn" id="mobileProfileBtn" style="padding: 0; overflow: hidden;">
         <img src="https://ui-avatars.com/api/?name=User&background=00ffcc&color=0b0d10&bold=true" id="mobileProfileAvatar" style="width:100%; height:100%; object-fit:cover;" alt="Профиль">
      </button>
   </div>
@@ -369,13 +369,23 @@
                       </div>
                    </div>
                    <div class="custom-theme-field">
-                      <label>Стиль (Нажми для выбора)</label>
+                      <label>Оформление</label>
+                      <div class="navbar-glass" style="width: max-content; padding: 5px;">
+                         <div class="navbar-tabs" id="themeModeTabs">
+                            <div class="nav-indicator" id="themeModeIndicator"></div>
+                            <button class="nav-tab active" data-t-mode="dark" style="padding: 0.5rem 1.2rem;">Тёмная</button>
+                            <button class="nav-tab" data-t-mode="light" style="padding: 0.5rem 1.2rem;">Светлая</button>
+                         </div>
+                      </div>
+                   </div>
+                   <div class="custom-theme-field">
+                      <label>Форма элементов (кнопки, окна, плитки)</label>
                       <div class="navbar-glass" style="width: max-content; padding: 5px;">
                          <div class="navbar-tabs" id="themeStyleTabs">
                             <div class="nav-indicator" id="themeStyleIndicator" style="background: var(--accent-color) !important; opacity: 0.8;"></div>
-                            <button class="nav-tab active" data-t-style="1" style="padding: 0.5rem 1rem;"><i data-lucide="circle"></i></button>
-                            <button class="nav-tab" data-t-style="2" style="padding: 0.5rem 1rem;"><i data-lucide="triangle"></i></button>
-                            <button class="nav-tab" data-t-style="3" style="padding: 0.5rem 1rem;"><i data-lucide="hexagon"></i></button>
+                            <button class="nav-tab active" data-t-style="default" style="padding: 0.5rem 1rem;"><i data-lucide="sparkles"></i></button>
+                            <button class="nav-tab" data-t-style="square" style="padding: 0.5rem 1rem;"><i data-lucide="square"></i></button>
+                            <button class="nav-tab" data-t-style="circle" style="padding: 0.5rem 1rem;"><i data-lucide="circle"></i></button>
                          </div>
                       </div>
                    </div>
@@ -472,6 +482,7 @@
     </div>
   </div>
 
+  <script src="articles-data.js"></script>
   <script src="script.js" defer></script>
 </body>
 </html>

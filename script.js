@@ -242,7 +242,7 @@ async function recordView(type, itemId) {
 // =======================================================================
 // ВКЛАДКИ ВЕРХНЕЙ ПАНЕЛИ
 // =======================================================================
-const navTabs = document.querySelectorAll('.nav-tab');
+const navTabs = document.querySelectorAll('#navTabs .nav-tab');
 const navIndicator = document.getElementById('navIndicator');
 const tabContents = document.querySelectorAll('.tab-content');
 let lastIndicatorX = 0;
@@ -286,7 +286,7 @@ function switchTab(tabName) {
 navTabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
 
 window.addEventListener('resize', () => {
-  const active = document.querySelector('.nav-tab.active');
+  const active = document.querySelector('#navTabs .nav-tab.active');
   if (active) moveIndicator(active);
   moveSidebarIndicator();
   moveSettingsIndicator();
@@ -765,7 +765,7 @@ document.getElementById('saveCustomThemeBtn')?.addEventListener('click', () => {
   if (!/^#[0-9a-fA-F]{6}$/.test(bg) || !/^#[0-9a-fA-F]{6}$/.test(accent) || !/^#[0-9a-fA-F]{6}$/.test(interfaceC)) {
     showNotification('Неверный формат цвета', 'error'); return;
   }
-  const isDark = !isLightColor(bg);
+  const isDark = selectedThemeMode === 'light' ? false : true;
   const id = 'custom_' + Date.now();
   const theme = { id, name, bg, accent, interface: interfaceC, isDark };
   const custom = getCustomThemes();
@@ -1280,8 +1280,7 @@ let articlesLoaded = false;
 
 async function loadArticlesData() {
   if (articlesLoaded) return;
-  try { const res = await fetch('articles.json'); articles = await res.json(); }
-  catch (error) { console.error('Не удалось загрузить articles.json:', error); articles = []; }
+  articles = typeof IDEAHUB_ARTICLES !== 'undefined' ? IDEAHUB_ARTICLES : [];
   articlesLoaded = true;
 }
 
@@ -1295,7 +1294,7 @@ function renderArticleCard(article) {
         <span class="meta-item"><i data-lucide="user"></i> ${article.author}</span>
         <span class="meta-item"><i data-lucide="clock"></i> ${article.readTime} мин</span>
       </div>
-      <button class="btn-read" onclick="window.location.href='articles/article-${article.id}.html'; event.stopPropagation();">Читать статью</button>
+      <button class="btn-read" onclick="window.location.href='article.html?id=${article.id}'; event.stopPropagation();">Читать статью</button>
     </div>`;
 }
 
@@ -1324,10 +1323,11 @@ function openArticleModal(article) {
 // =======================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(getCurrentTheme());
+  applyShapeStyle(getSavedShapeStyle());
   await updateUserUI();
   await loadUserData();
   renderCards();
-  const active = document.querySelector('.nav-tab.active') || navTabs[0];
+  const active = document.querySelector('#navTabs .nav-tab.active') || navTabs[0];
   if (active) moveIndicator(active);
   if (window.lucide) lucide.createIcons();
   if (window.gsap) {
@@ -1337,11 +1337,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-// Theme Slider Logic
+// ===== ФОРМА ЭЛЕМЕНТОВ ИНТЕРФЕЙСА (стиль: по умолчанию / квадрат / круг) =====
+function getSavedShapeStyle() {
+  return localStorage.getItem('ideahub_shape_style') || 'default';
+}
+function applyShapeStyle(style) {
+  document.body.classList.remove('shape-square', 'shape-circle');
+  if (style === 'square') document.body.classList.add('shape-square');
+  else if (style === 'circle') document.body.classList.add('shape-circle');
+  localStorage.setItem('ideahub_shape_style', style);
+}
+
+// Theme Slider Logic (форма элементов интерфейса)
 const themeStyleTabs = document.querySelectorAll('#themeStyleTabs .nav-tab');
 const themeStyleIndicator = document.getElementById('themeStyleIndicator');
 let lastThemeStyleX = 0;
 if (themeStyleTabs.length) {
+    // Отмечаем активной вкладку, соответствующую сохранённому стилю
+    const savedStyle = getSavedShapeStyle();
+    themeStyleTabs.forEach(t => t.classList.toggle('active', t.dataset.tStyle === savedStyle));
+    requestAnimationFrame(() => {
+      const active = document.querySelector('#themeStyleTabs .nav-tab.active') || themeStyleTabs[0];
+      if (active && themeStyleIndicator) {
+        themeStyleIndicator.style.width = `${active.offsetWidth}px`;
+        themeStyleIndicator.style.transform = `translateX(${active.offsetLeft}px)`;
+        lastThemeStyleX = active.offsetLeft;
+      }
+    });
+
     themeStyleTabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
             themeStyleTabs.forEach(t => t.classList.remove('active'));
@@ -1360,6 +1383,48 @@ if (themeStyleTabs.length) {
               themeStyleIndicator.classList.remove('is-moving');
               lastThemeStyleX = tab.offsetLeft;
             }, 180);
+
+            applyShapeStyle(tab.dataset.tStyle);
+            showNotification('Форма интерфейса обновлена');
+        });
+    });
+}
+
+// ===== РЕЖИМ ТЕМЫ (тёмная/светлая) для конструктора своей темы =====
+const themeModeTabs = document.querySelectorAll('#themeModeTabs .nav-tab');
+const themeModeIndicator = document.getElementById('themeModeIndicator');
+let lastThemeModeX = 0;
+let selectedThemeMode = 'dark';
+if (themeModeTabs.length) {
+    requestAnimationFrame(() => {
+      const active = document.querySelector('#themeModeTabs .nav-tab.active') || themeModeTabs[0];
+      if (active && themeModeIndicator) {
+        themeModeIndicator.style.width = `${active.offsetWidth}px`;
+        themeModeIndicator.style.transform = `translateX(${active.offsetLeft}px)`;
+        lastThemeModeX = active.offsetLeft;
+      }
+    });
+
+    themeModeTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            themeModeTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const targetX = tab.offsetLeft;
+            const direction = targetX > lastThemeModeX ? 1 : -1;
+            themeModeIndicator.classList.add('is-moving');
+            themeModeIndicator.dataset.dir = direction > 0 ? '1' : '-1';
+            themeModeIndicator.style.width = `${tab.offsetWidth + 4}px`;
+            themeModeIndicator.style.transform = `translateX(${tab.offsetLeft - 2}px)`;
+
+            setTimeout(() => {
+              themeModeIndicator.style.width = `${tab.offsetWidth}px`;
+              themeModeIndicator.style.transform = `translateX(${tab.offsetLeft}px)`;
+              themeModeIndicator.classList.remove('is-moving');
+              lastThemeModeX = tab.offsetLeft;
+            }, 180);
+
+            selectedThemeMode = tab.dataset.tMode;
         });
     });
 }
@@ -1402,20 +1467,100 @@ fabTabs.forEach(tab => {
     });
 });
 
-function updateFabContent(type) {
+function fabEmptyState(text) {
+    return `<p style="opacity:0.6; text-align:center; padding: 1rem 0;">${text}</p>`;
+}
+
+async function updateFabContent(type) {
     let contentHtml = '';
+
     if (type === 'fav-ideas') {
         const favs = ideas.filter(i => favorites.includes(i.id));
-        contentHtml = favs.length ? favs.map(i => `<div class="fab-item"><span>${i.name}</span><i data-lucide="lightbulb" style="width:16px;"></i></div>`).join('') : '<p style="opacity:0.6; text-align:center;">Пусто</p>';
+        contentHtml = favs.length ? favs.map(i => `
+          <div class="fab-item" data-fab-open="idea" data-fab-id="${i.id}">
+            <div class="fab-item-main">
+              <span>${i.name}</span>
+              <span class="fab-item-meta">${i.category}</span>
+            </div>
+            <div class="fab-item-actions">
+              <i data-lucide="lightbulb" style="width:16px; opacity:0.6;"></i>
+              <button class="fab-item-remove" data-fab-remove="idea" data-fab-id="${i.id}" title="Убрать из избранного"><i data-lucide="x" style="width:14px;"></i></button>
+            </div>
+          </div>`).join('') : fabEmptyState('Нет избранных идей');
+
     } else if (type === 'up-ideas') {
         const liked = ideas.filter(i => localStorage.getItem(`ideahub_liked_idea_${i.id}`) === 'true');
-        contentHtml = liked.length ? liked.map(i => `<div class="fab-item"><span>${i.name}</span><i data-lucide="arrow-up" style="width:16px;"></i></div>`).join('') : '<p style="opacity:0.6; text-align:center;">Пусто</p>';
+        contentHtml = liked.length ? liked.map(i => `
+          <div class="fab-item" data-fab-open="idea" data-fab-id="${i.id}">
+            <div class="fab-item-main">
+              <span>${i.name}</span>
+              <span class="fab-item-meta">${i.category}</span>
+            </div>
+            <div class="fab-item-actions">
+              <i data-lucide="arrow-up" style="width:16px; opacity:0.6;"></i>
+              <button class="fab-item-remove" data-fab-remove="up-idea" data-fab-id="${i.id}" title="Убрать лайк"><i data-lucide="x" style="width:14px;"></i></button>
+            </div>
+          </div>`).join('') : fabEmptyState('Нет лайкнутых идей');
+
     } else if (type === 'fav-articles') {
-        contentHtml = '<p style="opacity:0.6; text-align:center;">Нет сохраненных статей</p>';
+        await loadArticlesData();
+        const favIds = JSON.parse(localStorage.getItem('ideahub_fav_articles') || '[]');
+        const favArticles = articles.filter(a => favIds.includes(a.id));
+        contentHtml = favArticles.length ? favArticles.map(a => `
+          <div class="fab-item" data-fab-open="article" data-fab-id="${a.id}">
+            <div class="fab-item-main">
+              <span>${a.title}</span>
+              <span class="fab-item-meta">${a.category} · ${a.readTime} мин</span>
+            </div>
+            <div class="fab-item-actions">
+              <i data-lucide="book-open" style="width:16px; opacity:0.6;"></i>
+              <button class="fab-item-remove" data-fab-remove="article" data-fab-id="${a.id}" title="Убрать из избранного"><i data-lucide="x" style="width:14px;"></i></button>
+            </div>
+          </div>`).join('') : fabEmptyState('Нет сохранённых статей');
     }
+
     fabContentList.innerHTML = contentHtml;
     if (window.lucide) lucide.createIcons();
 }
+
+// Клики по элементам списка избранного: открыть идею/статью или убрать из списка
+fabContentList?.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('[data-fab-remove]');
+    if (removeBtn) {
+        e.stopPropagation();
+        const id = parseInt(removeBtn.dataset.fabId, 10);
+        const kind = removeBtn.dataset.fabRemove;
+        if (kind === 'idea') {
+            favorites = favorites.filter(fid => fid !== id);
+            localStorage.setItem('ideahub_favs', JSON.stringify(favorites));
+            renderCards();
+        } else if (kind === 'up-idea') {
+            localStorage.removeItem(`ideahub_liked_idea_${id}`);
+        } else if (kind === 'article') {
+            const favIds = JSON.parse(localStorage.getItem('ideahub_fav_articles') || '[]');
+            localStorage.setItem('ideahub_fav_articles', JSON.stringify(favIds.filter(fid => fid !== id)));
+        }
+        const activeTab = document.querySelector('#fabTabs .nav-tab.active');
+        if (activeTab) updateFabContent(activeTab.dataset.fabTab);
+        showNotification('Убрано из списка');
+        return;
+    }
+
+    const item = e.target.closest('[data-fab-open]');
+    if (item) {
+        const id = parseInt(item.dataset.fabId, 10);
+        const kind = item.dataset.fabOpen;
+        if (kind === 'article') {
+            window.location.href = `article.html?id=${id}`;
+        } else if (kind === 'idea') {
+            const idea = ideas.find(i => i.id === id);
+            if (idea) {
+                fabPopup.classList.remove('active');
+                openIdeaModal(idea, null);
+            }
+        }
+    }
+});
 
 
 document.getElementById('mobileProfileBtn')?.addEventListener('click', openUserProfileModal);
