@@ -224,12 +224,19 @@ function translateError(msg) {
   return t[msg] || msg;
 }
 
-function recordView(type) {
+async function recordView(type, itemId) {
   if (!currentUser) return;
   const key = `ideahub_views_${currentUser.id}`;
   let views = JSON.parse(localStorage.getItem(key)) || { ideas: 0, articles: 0 };
   views[type] = (views[type] || 0) + 1;
   localStorage.setItem(key, JSON.stringify(views));
+
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return;
+  try {
+    if (type === 'ideas') await supabaseClient.from('views_ideas').insert({ id_profile: profileId, id_idea: itemId });
+    else if (type === 'articles') await supabaseClient.from('views_articles').insert({ id_profile: profileId, id_article: itemId });
+  } catch (e) { console.error('Ошибка записи просмотра:', e); }
 }
 
 // =======================================================================
@@ -297,7 +304,39 @@ function moveSidebarIndicator(tabEl) {
     tabEl = document.querySelector('.sidebar-tab.active');
   }
   if (!tabEl || !sidebarIndicator) return;
+
+  const sidebarTabsEl = document.getElementById('sidebarTabs');
+  const isRow = sidebarTabsEl && getComputedStyle(sidebarTabsEl).flexDirection === 'row';
+
+  if (isRow) {
+    // Горизонтальный режим (мобильная капсула): двигаем по X, ширина = ширине кнопки
+    const targetX = tabEl.offsetLeft;
+    const direction = targetX > lastSidebarY ? 1 : -1;
+    const isInitial = sidebarIndicator.style.width === '0px' || !sidebarIndicator.style.width;
+    sidebarIndicator.style.height = '';
+    if (!isInitial) {
+      sidebarIndicator.classList.add('is-moving');
+      sidebarIndicator.dataset.dir = direction > 0 ? '1' : '-1';
+      sidebarIndicator.style.width = `${tabEl.offsetWidth + 4}px`;
+      sidebarIndicator.style.transform = `translateX(${tabEl.offsetLeft - 2}px)`;
+      clearTimeout(sidebarIndicator.moveTimeout);
+      sidebarIndicator.moveTimeout = setTimeout(() => {
+        sidebarIndicator.style.width = `${tabEl.offsetWidth}px`;
+        sidebarIndicator.style.transform = `translateX(${tabEl.offsetLeft}px)`;
+        sidebarIndicator.classList.remove('is-moving');
+        lastSidebarY = tabEl.offsetLeft;
+      }, 180);
+    } else {
+      sidebarIndicator.style.width = `${tabEl.offsetWidth}px`;
+      sidebarIndicator.style.transform = `translateX(${tabEl.offsetLeft}px)`;
+      lastSidebarY = tabEl.offsetLeft;
+    }
+    return;
+  }
+
+  // Вертикальный режим (десктоп)
   const isInitial = sidebarIndicator.style.height === '0px' || !sidebarIndicator.style.height;
+  sidebarIndicator.style.width = '';
   if (!isInitial) {
     const targetY = tabEl.offsetTop;
     const direction = targetY > lastSidebarY ? 1 : -1;
@@ -318,6 +357,15 @@ function moveSidebarIndicator(tabEl) {
     lastSidebarY = tabEl.offsetTop;
   }
 }
+
+window.addEventListener('resize', () => {
+  const active = document.querySelector('.sidebar-tab.active');
+  if (active) {
+    sidebarIndicator.style.width = '';
+    sidebarIndicator.style.height = '';
+    moveSidebarIndicator(active);
+  }
+});
 
 function switchSidebarTab(tabName) {
   sidebarTabs.forEach(t => t.classList.toggle('active', t.dataset.sideTab === tabName));
@@ -442,44 +490,9 @@ async function signOut() {
   try {
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
-    currentUser = null; await updateUserUI(); renderCards();
+    currentUser = null; currentProfileId = null; await updateUserUI(); renderCards();
     showNotification('Вы вышли из аккаунта');
   } catch (error) { showNotification(translateError(error.message), 'error'); }
-}
-
-// ========================================================
-// СОЗДАНИЕ ПРОФИЛЯ (при первом входе)
-// ========================================================
-async function ensureProfile(user) {
-  if (!user) return;
-
-  const { data: existing } = await supabaseClient
-    .from('profiles')
-    .select('id')
-    .eq('auth_id', user.id)
-    .maybeSingle();
-
-  if (!existing) {
-    const { data: newProfile, error } = await supabaseClient
-      .from('profiles')
-      .insert({
-        auth_id: user.id,
-        username: user.user_metadata?.name || user.email?.split('@')[0] || 'User'
-      })
-      .select()
-      .single();
-
-    if (!error && newProfile) {
-      await supabaseClient.from('profiles_statistic').insert({
-        id_profile: newProfile.id,
-        stat_up: 0,
-        stat_comments: 0,
-        stat_old: 0,
-        stat_views_ideas: 0,
-        stat_views_articles: 0
-      });
-    }
-  }
 }
 
 let currentProfileId = null;
@@ -552,10 +565,10 @@ function renderAccountsDropdown() {
   let html = '';
   const curName = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Пользователь';
   const curAvatar = currentUser.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(curName)}&background=00ffcc&color=0b0d10&bold=true`;
-  html += `<button class="acc-dropdown-item active-account" data-acc-id="${currentUser.id}"><img src="${curAvatar}" alt=""><div class="acc-item-info"><span class="acc-item-name">${curName}</span><span class="acc-item-email">${currentUser.email}</span></div><i data-lucide="check" style="width:18px;height:18px;color:var(--accent-color);flex-shrink:0;"></i></button>`;
+  html += `<div class="acc-dropdown-item active-account" data-acc-id="${currentUser.id}"><img src="${curAvatar}" alt=""><div class="acc-item-info"><span class="acc-item-name">${curName}</span><span class="acc-item-email">${currentUser.email}</span></div><i data-lucide="check" style="width:18px;height:18px;color:var(--accent-color);flex-shrink:0;"></i></div>`;
   otherAccs.forEach(a => {
     const avatar = a.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&background=00ffcc&color=0b0d10&bold=true`;
-    html += `<button class="acc-dropdown-item" data-acc-id="${a.id}"><img src="${avatar}" alt=""><div class="acc-item-info"><span class="acc-item-name">${a.name}</span><span class="acc-item-email">${a.email}</span></div><button class="acc-remove-btn" data-remove-id="${a.id}" title="Убрать"><i data-lucide="x"></i></button></button>`;
+    html += `<div class="acc-dropdown-item" data-acc-id="${a.id}"><img src="${avatar}" alt=""><div class="acc-item-info"><span class="acc-item-name">${a.name}</span><span class="acc-item-email">${a.email}</span></div><button class="acc-remove-btn" data-remove-id="${a.id}" title="Убрать"><i data-lucide="x"></i></button></div>`;
   });
   accDropdownList.innerHTML = html;
   if (window.lucide) lucide.createIcons();
@@ -592,6 +605,7 @@ async function quickSwitchAccount(acc) {
       const { data, error } = await supabaseClient.auth.setSession({ refresh_token: refreshToken });
       if (!error && data.user) {
         currentUser = data.user;
+        currentProfileId = null;
         addStoredAccount(currentUser);
         await updateUserUI();
         await loadUserData();
@@ -610,8 +624,8 @@ async function quickSwitchAccount(acc) {
   if (authEmailInput) authEmailInput.value = acc.email;
 }
 
-navAvatarBtn?.addEventListener('click', () => {
-  if (!currentUser) return;
+function openUserProfileModal() {
+  if (!currentUser) { openAuthModal(); return; }
   const name = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Пользователь';
   const avatarUrl = currentUser.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00ffcc&color=0b0d10&bold=true`;
   document.getElementById('profileModalName').textContent = name;
@@ -620,7 +634,9 @@ navAvatarBtn?.addEventListener('click', () => {
   userProfileModal.classList.add('active'); closeAccDropdown();
   if (window.lucide) lucide.createIcons();
   loadProfileStats();
-});
+}
+
+navAvatarBtn?.addEventListener('click', openUserProfileModal);
 
 document.getElementById('userProfileClose')?.addEventListener('click', () => { userProfileModal.classList.remove('active'); closeAccDropdown(); });
 document.getElementById('userProfileBackdrop')?.addEventListener('click', () => { userProfileModal.classList.remove('active'); closeAccDropdown(); });
@@ -873,16 +889,22 @@ async function addComment(ideaId, text) {
 // =======================================================================
 // ЛАЙКИ И ИЗБРАННОЕ
 // =======================================================================
+let myUpvotedIdeas = new Set();
+
 async function toggleLikeSupabase(ideaId) {
   if (!currentUser) { showNotification('Войдите, чтобы оценить идею', 'error'); return false; }
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return false;
   try {
-    const { data: existing } = await supabaseClient.from('likes').select('*').eq('idea_id', ideaId).eq('user_id', currentUser.id).single();
+    const { data: existing } = await supabaseClient.from('upvotes_ideas')
+      .select('id').eq('id_idea', ideaId).eq('id_profile', profileId).maybeSingle();
     if (existing) {
-      await supabaseClient.from('likes').delete().eq('idea_id', ideaId).eq('user_id', currentUser.id);
-      likes[ideaId] = (likes[ideaId] || 1) - 1;
-      if (likes[ideaId] <= 0) delete likes[ideaId];
+      await supabaseClient.from('upvotes_ideas').delete().eq('id', existing.id);
+      myUpvotedIdeas.delete(ideaId);
+      likes[ideaId] = Math.max((likes[ideaId] || 1) - 1, 0);
     } else {
-      await supabaseClient.from('likes').insert({ idea_id: ideaId, user_id: currentUser.id });
+      await supabaseClient.from('upvotes_ideas').insert({ id_idea: ideaId, id_profile: profileId });
+      myUpvotedIdeas.add(ideaId);
       likes[ideaId] = (likes[ideaId] || 0) + 1;
     }
     localStorage.setItem('ideahub_likes', JSON.stringify(likes));
@@ -893,13 +915,16 @@ async function toggleLikeSupabase(ideaId) {
 
 async function toggleFavSupabase(ideaId) {
   if (!currentUser) { showNotification('Войдите, чтобы добавить в избранное', 'error'); return false; }
+  const profileId = await getCurrentProfileId();
+  if (!profileId) return false;
   try {
-    const { data: existing } = await supabaseClient.from('favorites').select('*').eq('idea_id', ideaId).eq('user_id', currentUser.id).single();
+    const { data: existing } = await supabaseClient.from('favorites_ideas')
+      .select('id').eq('id_idea', ideaId).eq('id_profile', profileId).maybeSingle();
     if (existing) {
-      await supabaseClient.from('favorites').delete().eq('idea_id', ideaId).eq('user_id', currentUser.id);
+      await supabaseClient.from('favorites_ideas').delete().eq('id', existing.id);
       favorites = favorites.filter(id => id !== ideaId);
     } else {
-      await supabaseClient.from('favorites').insert({ idea_id: ideaId, user_id: currentUser.id });
+      await supabaseClient.from('favorites_ideas').insert({ id_idea: ideaId, id_profile: profileId });
       if (!favorites.includes(ideaId)) favorites.push(ideaId);
     }
     localStorage.setItem('ideahub_favs', JSON.stringify(favorites));
@@ -908,18 +933,27 @@ async function toggleFavSupabase(ideaId) {
   } catch (error) { console.error('Ошибка с избранным:', error); showNotification('Ошибка при сохранении', 'error'); return false; }
 }
 
+async function loadLikeCounts() {
+  try {
+    const { data } = await supabaseClient.from('upvotes_ideas').select('id_idea');
+    const counts = {};
+    (data || []).forEach(r => { counts[r.id_idea] = (counts[r.id_idea] || 0) + 1; });
+    likes = counts;
+    localStorage.setItem('ideahub_likes', JSON.stringify(likes));
+  } catch (e) { console.error('Ошибка загрузки лайков:', e); }
+}
+
 async function loadUserData() {
   try {
+    await loadLikeCounts();
     if (!currentUser) return;
-    const { data: favData } = await supabaseClient.from('favorites').select('idea_id').eq('user_id', currentUser.id);
-    if (favData) { favorites = favData.map(f => f.idea_id); localStorage.setItem('ideahub_favs', JSON.stringify(favorites)); }
-    const { data: likeData } = await supabaseClient.from('likes').select('idea_id').eq('user_id', currentUser.id);
-    if (likeData) {
-      const newLikes = {};
-      likeData.forEach(l => { newLikes[l.idea_id] = (newLikes[l.idea_id] || 0) + 1; });
-      likes = { ...likes, ...newLikes };
-      localStorage.setItem('ideahub_likes', JSON.stringify(likes));
-    }
+    const profileId = await getCurrentProfileId();
+    if (!profileId) return;
+    const { data: favData } = await supabaseClient.from('favorites_ideas').select('id_idea').eq('id_profile', profileId);
+    favorites = (favData || []).map(f => f.id_idea);
+    localStorage.setItem('ideahub_favs', JSON.stringify(favorites));
+    const { data: likeData } = await supabaseClient.from('upvotes_ideas').select('id_idea').eq('id_profile', profileId);
+    myUpvotedIdeas = new Set((likeData || []).map(l => l.id_idea));
   } catch (error) { console.error('Ошибка загрузки данных:', error); }
 }
 
@@ -937,7 +971,7 @@ let filterPanelOpen = false;
 function renderIdeaCard(idea, rank) {
   const isFav = favorites.includes(idea.id);
   const likeCount = likes[idea.id] || 0;
-  const hasLiked = localStorage.getItem(`ideahub_liked_idea_${idea.id}`) === 'true'; 
+  const hasLiked = myUpvotedIdeas.has(idea.id);
 
   const rankBadge = rank ? `<div class="card-rank rank-${rank}">${rank}</div>` : '';
   return `
@@ -988,7 +1022,14 @@ function renderCards() {
   let filtered = ideas.filter(idea => {
     const matchesCategory = currentCategory === 'all' || idea.category === currentCategory;
     const matchesSearch = idea.name.toLowerCase().includes(searchTerm.toLowerCase()) || idea.category.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesComplexity = currentComplexityFilter === 'all' || idea.complexity === currentComplexityFilter;
+    const matchesRating = idea.rating >= currentMinRating;
+    let matchesBudget = true;
+    if (currentBudgetFilter !== 'all') {
+      const [min, max] = currentBudgetFilter.split('-').map(Number);
+      matchesBudget = idea.capital >= min && idea.capital <= max;
+    }
+    return matchesCategory && matchesSearch && matchesComplexity && matchesRating && matchesBudget;
   });
   if (currentSidebarTab === 'top') {
     filtered = filtered.slice().sort((a, b) => b.rating - a.rating);
@@ -1007,23 +1048,10 @@ function renderCards() {
     btn.addEventListener('click', (e) => { e.stopPropagation(); toggleFavSupabase(parseInt(btn.dataset.fav, 10)); });
   });
   cardsGrid.querySelectorAll('[data-upvote]').forEach(btn => {
-    btn.addEventListener('click', async (e) => { 
-      e.stopPropagation(); 
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const id = parseInt(btn.dataset.upvote, 10);
-      const lastUpvoteDate = localStorage.getItem(`upvote_date_idea_${id}`);
-      const today = new Date().toDateString();
-      
-      if (lastUpvoteDate === today) {
-          showNotification('Вы уже отдавали голос за эту идею сегодня.', 'error');
-          return;
-      }
-      
-      const success = await toggleLikeSupabase(id); 
-      if(success) {
-          localStorage.setItem(`upvote_date_idea_${id}`, today);
-          localStorage.setItem(`ideahub_liked_idea_${id}`, 'true');
-          renderCards(); 
-      }
+      await toggleLikeSupabase(id);
     });
   });
   cardsGrid.querySelectorAll('[data-id]').forEach(card => {
@@ -1083,6 +1111,69 @@ categoryFilters?.querySelectorAll('.filter-pill').forEach(pill => {
   });
 });
 
+// =======================================================================
+// ФИЛЬТРЫ: бюджет, сложность, рейтинг
+// =======================================================================
+let currentBudgetFilter = 'all';
+let currentComplexityFilter = 'all';
+let currentMinRating = 0;
+
+function injectExtraFilters() {
+  if (!filterPanel || document.getElementById('budgetFilters')) return;
+  const extra = document.createElement('div');
+  extra.innerHTML = `
+    <div class="filter-group">
+      <h4>Бюджет</h4>
+      <div class="filter-pills" id="budgetFilters">
+        <button class="filter-pill active" data-budget="all">Любой</button>
+        <button class="filter-pill" data-budget="0-15000">До 15 000 ₽</button>
+        <button class="filter-pill" data-budget="15000-50000">15 000 – 50 000 ₽</button>
+        <button class="filter-pill" data-budget="50000-999999999">От 50 000 ₽</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <h4>Сложность</h4>
+      <div class="filter-pills" id="complexityFilters">
+        <button class="filter-pill active" data-complexity="all">Любая</button>
+        <button class="filter-pill" data-complexity="Низкая">Низкая</button>
+        <button class="filter-pill" data-complexity="Средняя">Средняя</button>
+        <button class="filter-pill" data-complexity="Высокая">Высокая</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <h4>Минимальный рейтинг: <span id="minRatingValue">0</span></h4>
+      <input type="range" id="minRatingSlider" min="0" max="5" step="0.5" value="0" style="width:100%;">
+    </div>
+  `;
+  filterPanel.appendChild(extra);
+
+  document.getElementById('budgetFilters').querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.getElementById('budgetFilters').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentBudgetFilter = pill.dataset.budget;
+      renderCards();
+    });
+  });
+
+  document.getElementById('complexityFilters').querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.getElementById('complexityFilters').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentComplexityFilter = pill.dataset.complexity;
+      renderCards();
+    });
+  });
+
+  const minRatingSlider = document.getElementById('minRatingSlider');
+  minRatingSlider?.addEventListener('input', () => {
+    currentMinRating = parseFloat(minRatingSlider.value);
+    document.getElementById('minRatingValue').textContent = currentMinRating;
+    renderCards();
+  });
+}
+injectExtraFilters();
+
 function updateFilterCounts() {
   const pills = categoryFilters?.querySelectorAll('.filter-pill');
   if (!pills) return;
@@ -1108,7 +1199,7 @@ const detailsCloseBtn = document.getElementById('detailsCloseBtn');
 const modalDynamicContent = document.getElementById('modalDynamicContent');
 
 function openIdeaModal(idea, cardEl) {
-  recordView('ideas');
+  recordView('ideas', idea.id);
   currentCardElement = cardEl;
   const isFav = favorites.includes(idea.id);
   modalDynamicContent.innerHTML = `
@@ -1144,14 +1235,31 @@ async function loadCommentsUI(ideaId) {
   const commentsSection = document.getElementById('commentsSection');
   if (!commentsSection) return;
   const comments = await loadComments(ideaId);
+  const renderComment = (c, i) => {
+    const name = c.profiles?.username || 'Пользователь';
+    const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00ffcc&color=0b0d10&bold=true`;
+    return `<div class="comment-item" style="animation-delay:${Math.min(i, 8) * 0.05}s">
+      <img class="comment-avatar" src="${avatar}" alt="">
+      <div class="comment-bubble">
+        <div class="comment-header">
+          <span class="comment-author">${name}</span>
+          <span class="comment-time">${new Date(c.created_at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <div class="comment-text">${c.text}</div>
+      </div>
+    </div>`;
+  };
   commentsSection.innerHTML = `
-    <h3>Комментарии (${comments.length})</h3>
-    ${comments.length ? comments.map(c => `<div class="comment-item"><div class="comment-author">${c.user_name}</div><div class="comment-text">${c.text}</div><div class="comment-time">${new Date(c.created_at).toLocaleString('ru-RU')}</div></div>`).join('') : '<p style="opacity:0.6;">Пока нет комментариев</p>'}
+    <h3><i data-lucide="message-square"></i> Комментарии (${comments.length})</h3>
+    <div class="comment-list">
+      ${comments.length ? comments.map(renderComment).join('') : '<div class="comments-empty">Пока нет комментариев — станьте первым</div>'}
+    </div>
     <div class="comment-input-group">
       <input type="text" id="newCommentInput" placeholder="${currentUser ? 'Написать комментарий...' : 'Войдите, чтобы комментировать'}" ${currentUser ? '' : 'disabled'} />
-      <button id="submitCommentBtn" ${currentUser ? '' : 'disabled'}>Отправить</button>
+      <button id="submitCommentBtn" ${currentUser ? '' : 'disabled'}><i data-lucide="send"></i></button>
     </div>
   `;
+  if (window.lucide) lucide.createIcons();
   const input = document.getElementById('newCommentInput');
   const submitBtn = document.getElementById('submitCommentBtn');
   submitBtn?.addEventListener('click', async () => {
@@ -1206,7 +1314,7 @@ async function renderArticles() {
 }
 
 function openArticleModal(article) {
-  recordView('articles');
+  recordView('articles', article.id);
   modalDynamicContent.innerHTML = `<span class="modal-badge">${article.category}</span><h2>${article.title}</h2><p style="opacity:0.6; margin: 0.5rem 0 1.5rem;">${article.author} · ${new Date(article.date).toLocaleDateString('ru-RU')} · ${article.readTime} мин чтения</p><div class="modal-blocks">${article.content}</div>`;
   detailsModal.classList.add('active'); isModalOpen = true;
 }
@@ -1267,7 +1375,14 @@ let lastFabX = 0;
 fabToggleBtn?.addEventListener('click', () => {
     fabPopup.classList.toggle('active');
     if(fabPopup.classList.contains('active')) {
-        updateFabContent('fav-ideas'); 
+        updateFabContent('fav-ideas');
+        requestAnimationFrame(() => {
+            const activeTab = document.querySelector('#fabTabs .nav-tab.active') || fabTabs[0];
+            if (activeTab && fabIndicator) {
+                fabIndicator.style.width = `${activeTab.offsetWidth}px`;
+                fabIndicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
+            }
+        });
     }
 });
 
@@ -1303,4 +1418,4 @@ function updateFabContent(type) {
 }
 
 
-document.getElementById('mobileProfileBtn')?.addEventListener('click', () => { currentUser ? userProfileModal.classList.add('active') : openAuthModal(); });
+document.getElementById('mobileProfileBtn')?.addEventListener('click', openUserProfileModal);

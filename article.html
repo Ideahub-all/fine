@@ -17,8 +17,8 @@
   <header class="navbar article-header">
     <div class="navbar-container">
       <div class="navbar-left">
-        <button class="nav-avatar" onclick="window.location.href='index.html'" style="display: flex; align-items: center; justify-content: center; background: var(--nav-bg); border: 1px solid var(--nav-border);">
-           <i data-lucide="arrow-left" style="color: var(--text-color);"></i>
+        <button class="article-back-btn" onclick="window.location.href='index.html'" title="К статьям">
+           <i data-lucide="arrow-left"></i>
         </button>
       </div>
       
@@ -28,9 +28,8 @@
         </div>
       </nav>
 
-      <div class="navbar-right" style="gap: 10px;">
-         <button class="btn-glow" style="padding: 0.5rem 1rem;" id="articleUpvoteBtn"><i data-lucide="arrow-up"></i></button>
-         <button class="btn-glow" style="padding: 0.5rem 1rem;" id="articleFavBtn"><i data-lucide="bookmark"></i></button>
+      <div class="navbar-right">
+         <img src="https://ui-avatars.com/api/?name=User&background=00ffcc&color=0b0d10&bold=true" class="nav-avatar" alt="Профиль" onclick="window.location.href='index.html'">
       </div>
     </div>
   </header>
@@ -43,6 +42,23 @@
         <div id="commentsSection"></div>
      </div>
   </main>
+
+  <div class="fab-container">
+    <button class="fab-btn" id="fabToggleBtn">
+      <i data-lucide="bookmark"></i>
+    </button>
+    <div class="fab-popup glass" id="fabPopup">
+      <div class="navbar-glass fab-tabs-wrapper">
+        <div class="navbar-tabs" id="fabTabs">
+          <div class="nav-indicator" id="fabIndicator"></div>
+          <button class="nav-tab active" data-fab-tab="fav-ideas" title="Избранные идеи"><i data-lucide="lightbulb"></i><span>Идеи</span></button>
+          <button class="nav-tab" data-fab-tab="up-ideas" title="Лайкнутые идеи"><i data-lucide="arrow-up"></i><span>Лайки</span></button>
+          <button class="nav-tab" data-fab-tab="fav-articles" title="Избранные статьи"><i data-lucide="book-open"></i><span>Статьи</span></button>
+        </div>
+      </div>
+      <div class="fab-content-list" id="fabContentList"></div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
   <script>
@@ -68,9 +84,19 @@
                 <div style="line-height: 1.8; font-size: 1.05rem; opacity: 0.9;">
                     ${article.content}
                 </div>
+                <div class="article-actions-row">
+                  <button class="article-action-pill" id="articleUpvoteBtn"><i data-lucide="arrow-up"></i> Апвоут</button>
+                  <button class="article-action-pill" id="articleFavBtn"><i data-lucide="bookmark"></i> В избранное</button>
+                </div>
             `;
             
-            document.getElementById('articleUpvoteBtn').addEventListener('click', async () => {
+            const today = new Date().toDateString();
+            const lastUpvote = localStorage.getItem(`upvote_date_article_${article.id}`);
+            if (lastUpvote === today) document.getElementById('articleUpvoteBtn').classList.add('active');
+            const favArticles = JSON.parse(localStorage.getItem('ideahub_fav_articles') || '[]');
+            if (favArticles.includes(article.id)) document.getElementById('articleFavBtn').classList.add('active');
+
+            document.getElementById('articleUpvoteBtn').addEventListener('click', async (e) => {
                 const today = new Date().toDateString();
                 const lastUpvote = localStorage.getItem(`upvote_date_article_${article.id}`);
                 
@@ -78,12 +104,24 @@
                     showNotification('Вы уже отдавали голос за эту статью сегодня.', 'error');
                 } else {
                     localStorage.setItem(`upvote_date_article_${article.id}`, today);
+                    e.currentTarget.classList.add('active');
                     showNotification('Апвоут поставлен!');
                 }
             });
             
-            document.getElementById('articleFavBtn').addEventListener('click', async () => {
-                showNotification('Статья добавлена в избранное!');
+            document.getElementById('articleFavBtn').addEventListener('click', (e) => {
+                const favs = JSON.parse(localStorage.getItem('ideahub_fav_articles') || '[]');
+                const idx = favs.indexOf(article.id);
+                if (idx === -1) {
+                    favs.push(article.id);
+                    e.currentTarget.classList.add('active');
+                    showNotification('Статья добавлена в избранное!');
+                } else {
+                    favs.splice(idx, 1);
+                    e.currentTarget.classList.remove('active');
+                    showNotification('Статья убрана из избранного');
+                }
+                localStorage.setItem('ideahub_fav_articles', JSON.stringify(favs));
             });
 
             if(typeof loadCommentsUI === 'function') {
