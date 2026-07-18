@@ -846,7 +846,11 @@ applyCropBtn?.addEventListener('click', async () => {
 // =======================================================================
 async function loadComments(ideaId) {
   try {
-    const { data, error } = await supabaseClient.from('comments').select('*').eq('idea_id', ideaId).order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient
+      .from('comments')
+      .select('*, profiles(username)')
+      .eq('id_idea', ideaId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     currentIdeaComments = data || [];
     return currentIdeaComments;
@@ -855,12 +859,11 @@ async function loadComments(ideaId) {
 
 async function addComment(ideaId, text) {
   if (!currentUser) { showNotification('Войдите, чтобы оставить комментарий', 'error'); return null; }
+  const profileId = await getCurrentProfileId();
+  if (!profileId) { showNotification('Ошибка профиля, перезайдите в аккаунт', 'error'); return null; }
   try {
-    const { data, error } = await supabaseClient.from('comments').insert({
-      idea_id: ideaId, user_id: currentUser.id,
-      user_name: currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Аноним',
-      text: text
-    }).select();
+    const { data, error } = await supabaseClient.from('comments')
+      .insert({ id_idea: ideaId, id_profile: profileId, text }).select();
     if (error) throw error;
     showNotification('Комментарий добавлен');
     return data;
