@@ -482,16 +482,36 @@ async function ensureProfile(user) {
   }
 }
 
+let currentProfileId = null;
+
+async function ensureProfile(user) {
+  if (!user) return;
+  const { data: existing } = await supabaseClient
+    .from('profiles').select('id').eq('auth_id', user.id).maybeSingle();
+  if (existing) { currentProfileId = existing.id; return; }
+  const { data: newProfile, error } = await supabaseClient
+    .from('profiles')
+    .insert({ auth_id: user.id, username: user.user_metadata?.name || user.email?.split('@')[0] || 'User' })
+    .select().single();
+  if (!error && newProfile) {
+    currentProfileId = newProfile.id;
+    await supabaseClient.from('profiles_statistic').insert({
+      id_profile: newProfile.id, stat_up: 0, stat_comments: 0, stat_old: 0,
+      stat_views_ideas: 0, stat_views_articles: 0
+    });
+  }
+}
+
+async function getCurrentProfileId() {
+  if (currentProfileId) return currentProfileId;
+  await ensureProfile(currentUser);
+  return currentProfileId;
+}
+
 async function updateUserUI() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   currentUser = user;
-  async function updateUserUI() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  currentUser = user;
   await ensureProfile(user);
-  updateAuthButton();
-  if (user) addStoredAccount(user);
-}
   updateAuthButton();
   if (user) addStoredAccount(user);
 }
